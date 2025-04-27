@@ -1,12 +1,14 @@
 alerts:
   - rule: DEPLOYMENT_FAILED
   - rule: DOMAIN_FAILED
+
 databases:
   - engine: PG
     name: super-agi-main
     num_nodes: 1
     size: basic-xs
     version: "15"
+
 ingress:
   rules:
     - component:
@@ -14,20 +16,26 @@ ingress:
       match:
         path:
           prefix: /api
+
 name: superagi
+
 services:
-  - dockerfile_path: DockerfileRedis
+  - name: superagi-redis
+    dockerfile_path: DockerfileRedis
+    build_command: ""
     github: 
       branch: main
       deploy_on_push: true
       repo: TransformerOptimus/SuperAGI
     internal_ports: 
-    - 6379
+      - 6379
     instance_count: 1
     instance_size_slug: basic-xs
     source_dir: /
-    name: superagi-redis
-  - dockerfile_path: Dockerfile
+
+  - name: superagi-backend
+    dockerfile_path: Dockerfile
+    build_command: ""
     envs:
       - key: REDIS_URL
         scope: RUN_TIME
@@ -44,8 +52,10 @@ services:
     instance_size_slug: basic-xs
     run_command: /app/entrypoint.sh
     source_dir: /
-    name: superagi-backend
-  - dockerfile_path: ./gui/DockerfileProd
+
+  - name: superagi-gui
+    dockerfile_path: ./gui/DockerfileProd
+    build_command: ""
     github:
       branch: main
       deploy_on_push: true
@@ -54,9 +64,11 @@ services:
     instance_count: 1
     instance_size_slug: basic-xs
     source_dir: ./gui
-    name: superagi-gui
+
 workers:
-  - dockerfile_path: Dockerfile
+  - name: superagi-celery
+    dockerfile_path: Dockerfile
+    build_command: ""
     envs:
       - key: REDIS_URL
         scope: RUN_TIME
@@ -72,5 +84,3 @@ workers:
     instance_size_slug: basic-xs
     run_command: celery -A superagi.worker worker --beat --loglevel=info
     source_dir: /
-    name: superagi-celery
-  
